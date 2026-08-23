@@ -1,12 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function StreamList() {
   const [userInput, setUserInput] = useState("");
-  const [streamItems, setStreamItems] = useState([]);
+
+  const [streamItems, setStreamItems] = useState(() => {
+    try {
+      const savedItems = localStorage.getItem("streamlistItems");
+      return savedItems ? JSON.parse(savedItems) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [filter, setFilter] = useState("all");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem(
+      "streamlistItems",
+      JSON.stringify(streamItems)
+    );
+  }, [streamItems]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -115,6 +131,7 @@ function StreamList() {
 
         <p className="intro">
           Add movies and shows, then edit, complete, or remove them.
+          Your list will stay saved when you refresh the page.
         </p>
 
         <form className="stream-form" onSubmit={handleSubmit}>
@@ -143,7 +160,9 @@ function StreamList() {
         </form>
 
         {message && (
-          <p className="status-message">{message}</p>
+          <p className="status-message">
+            {message}
+          </p>
         )}
 
         <div className="list-summary">
@@ -213,6 +232,7 @@ function StreamList() {
               <span className="material-symbols-outlined">
                 movie
               </span>
+
               <p>No titles to display.</p>
             </div>
           ) : (

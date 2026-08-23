@@ -46,9 +46,9 @@ button {
   justify-content: center;
   width: 42px;
   height: 42px;
+  border-radius: 10px;
   background: #f0b429;
   color: #10131a;
-  border-radius: 10px;
   font-size: 24px;
   font-weight: bold;
 }
@@ -80,13 +80,14 @@ button {
   padding: 50px 7%;
 }
 
-.hero {
-  max-width: 900px;
+.hero,
+.movie-page {
+  max-width: 1000px;
   margin: 20px auto;
   padding: 45px;
-  background: #171b24;
   border: 1px solid #2a303d;
   border-radius: 18px;
+  background: #171b24;
 }
 
 .eyebrow {
@@ -96,7 +97,8 @@ button {
   letter-spacing: 2px;
 }
 
-.hero h2 {
+.hero h2,
+.movie-page h2 {
   margin: 0 0 15px;
   font-size: 40px;
 }
@@ -114,38 +116,45 @@ button {
   font-weight: bold;
 }
 
-.input-group {
+.input-group,
+.movie-search-form {
   display: flex;
   gap: 10px;
 }
 
 .input-group input,
-.edit-area input {
+.edit-area input,
+.movie-search-form input {
   flex: 1;
   min-width: 0;
   padding: 14px;
   border: 1px solid #3a4251;
   border-radius: 8px;
   background: #0f1218;
-  color: white;
+  color: #ffffff;
   outline: none;
 }
 
 .input-group input:focus,
-.edit-area input:focus {
+.edit-area input:focus,
+.movie-search-form input:focus {
   border-color: #f0b429;
 }
 
-.input-group button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.input-group button,
+.movie-search-form button {
   padding: 14px 20px;
   border: none;
   border-radius: 8px;
   background: #f0b429;
   color: #10131a;
   font-weight: bold;
+}
+
+.input-group button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .status-message {
@@ -258,10 +267,6 @@ button {
   min-width: 0;
 }
 
-.item-title > span:last-child {
-  overflow-wrap: anywhere;
-}
-
 .completed .item-title > span:last-child {
   color: #7d8591;
   text-decoration: line-through;
@@ -289,7 +294,7 @@ button {
 
 .icon-button:hover {
   background: #282e39;
-  color: white;
+  color: #ffffff;
 }
 
 .icon-button.delete:hover {
@@ -333,14 +338,74 @@ button {
   font-size: 21px;
 }
 
+.movie-search-form {
+  margin-bottom: 30px;
+}
+
+.movie-message {
+  margin: 20px 0;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(220px, 1fr)
+  );
+  gap: 20px;
+}
+
+.movie-card {
+  overflow: hidden;
+  border: 1px solid #2a303d;
+  border-radius: 12px;
+  background: #11151c;
+}
+
+.movie-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
+.poster-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: #252b37;
+  color: #8e97a4;
+}
+
+.movie-card-content {
+  padding: 18px;
+}
+
+.movie-card-content h3 {
+  margin: 0 0 12px;
+}
+
+.movie-details {
+  margin: 6px 0;
+  color: #f0b429;
+  font-size: 14px;
+}
+
+.movie-overview {
+  color: #b8c0cc;
+  line-height: 1.5;
+}
+
 .placeholder-page {
   max-width: 800px;
   margin: 40px auto;
   padding: 50px;
   text-align: center;
-  background: #171b24;
   border: 1px solid #2a303d;
   border-radius: 18px;
+  background: #171b24;
 }
 
 @media (max-width: 700px) {
@@ -358,20 +423,27 @@ button {
     padding: 30px 5%;
   }
 
-  .hero {
+  .hero,
+  .movie-page {
     padding: 28px 20px;
   }
 
-  .hero h2 {
+  .hero h2,
+  .movie-page h2 {
     font-size: 30px;
   }
 
-  .input-group {
+  .input-group,
+  .movie-search-form {
     flex-direction: column;
   }
 
   .input-group button {
     justify-content: center;
+  }
+
+  .movie-search-form button {
+    width: 100%;
   }
 
   .list-summary {
