@@ -4,12 +4,21 @@ function Navigation() {
   return (
     <header className="header">
       <div className="brand">
-        <span className="logo">S</span>
+        <span className="logo">
+          S
+        </span>
+
         <h1>StreamList</h1>
       </div>
 
-      <nav className="navigation">
-        <NavLink to="/" end>
+      <nav
+        className="navigation"
+        aria-label="Main navigation"
+      >
+        <NavLink
+          to="/"
+          end
+        >
           StreamList
         </NavLink>
 

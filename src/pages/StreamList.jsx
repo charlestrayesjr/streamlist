@@ -6,8 +6,14 @@ function StreamList() {
   const [streamItems, setStreamItems] = useState(() => {
     try {
       const savedItems = localStorage.getItem("streamlistItems");
+
       return savedItems ? JSON.parse(savedItems) : [];
-    } catch {
+    } catch (error) {
+      console.error(
+        "Unable to load StreamList data:",
+        error
+      );
+
       return [];
     }
   });
@@ -18,10 +24,17 @@ function StreamList() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    localStorage.setItem(
-      "streamlistItems",
-      JSON.stringify(streamItems)
-    );
+    try {
+      localStorage.setItem(
+        "streamlistItems",
+        JSON.stringify(streamItems)
+      );
+    } catch (error) {
+      console.error(
+        "Unable to save StreamList data:",
+        error
+      );
+    }
   }, [streamItems]);
 
   const handleSubmit = (event) => {
@@ -31,6 +44,19 @@ function StreamList() {
 
     if (cleanInput === "") {
       setMessage("Please enter a movie or show.");
+      return;
+    }
+
+    const duplicate = streamItems.some(
+      (item) =>
+        item.title.toLowerCase() ===
+        cleanInput.toLowerCase()
+    );
+
+    if (duplicate) {
+      setMessage(
+        `${cleanInput} is already in your StreamList.`
+      );
       return;
     }
 
@@ -46,7 +72,10 @@ function StreamList() {
     ]);
 
     setUserInput("");
-    setMessage(`${cleanInput} was added to your StreamList.`);
+
+    setMessage(
+      `${cleanInput} was added to your StreamList.`
+    );
   };
 
   const handleDelete = (id) => {
@@ -61,15 +90,21 @@ function StreamList() {
     setStreamItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id
-          ? { ...item, completed: !item.completed }
+          ? {
+              ...item,
+              completed: !item.completed,
+            }
           : item
       )
     );
+
+    setMessage("Item status updated.");
   };
 
   const startEditing = (item) => {
     setEditingId(item.id);
     setEditText(item.title);
+    setMessage("");
   };
 
   const saveEdit = (id) => {
@@ -80,10 +115,27 @@ function StreamList() {
       return;
     }
 
+    const duplicate = streamItems.some(
+      (item) =>
+        item.id !== id &&
+        item.title.toLowerCase() ===
+          cleanEdit.toLowerCase()
+    );
+
+    if (duplicate) {
+      setMessage(
+        `${cleanEdit} is already in your StreamList.`
+      );
+      return;
+    }
+
     setStreamItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id
-          ? { ...item, title: cleanEdit }
+          ? {
+              ...item,
+              title: cleanEdit,
+            }
           : item
       )
     );
@@ -96,6 +148,7 @@ function StreamList() {
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
+    setMessage("Editing canceled.");
   };
 
   const clearCompleted = () => {
@@ -122,19 +175,31 @@ function StreamList() {
     (item) => item.completed
   ).length;
 
+  const remainingCount =
+    streamItems.length - completedCount;
+
   return (
     <main className="page">
       <section className="hero">
-        <p className="eyebrow">MY STREAMING LIST</p>
-
-        <h2>Keep track of what you want to watch.</h2>
-
-        <p className="intro">
-          Add movies and shows, then edit, complete, or remove them.
-          Your list will stay saved when you refresh the page.
+        <p className="eyebrow">
+          MY STREAMING LIST
         </p>
 
-        <form className="stream-form" onSubmit={handleSubmit}>
+        <h2>
+          Keep track of what you want to watch.
+        </h2>
+
+        <p className="intro">
+          Add movies and shows, then edit, complete,
+          or remove them. Your list is stored locally
+          and remains available after the page is
+          refreshed.
+        </p>
+
+        <form
+          className="stream-form"
+          onSubmit={handleSubmit}
+        >
           <label htmlFor="stream-input">
             Movie or show title
           </label>
@@ -148,19 +213,27 @@ function StreamList() {
                 setUserInput(event.target.value)
               }
               placeholder="Enter a movie or show"
+              autoComplete="off"
             />
 
             <button type="submit">
-              <span className="material-symbols-outlined">
+              <span
+                className="material-symbols-outlined"
+                aria-hidden="true"
+              >
                 add
               </span>
+
               Add
             </button>
           </div>
         </form>
 
         {message && (
-          <p className="status-message">
+          <p
+            className="status-message"
+            aria-live="polite"
+          >
             {message}
           </p>
         )}
@@ -177,17 +250,22 @@ function StreamList() {
           </div>
 
           <div>
-            <strong>
-              {streamItems.length - completedCount}
-            </strong>
+            <strong>{remainingCount}</strong>
             <span>Remaining</span>
           </div>
         </div>
 
-        <div className="filter-bar">
+        <div
+          className="filter-bar"
+          aria-label="StreamList filters"
+        >
           <button
             type="button"
-            className={filter === "all" ? "filter-active" : ""}
+            className={
+              filter === "all"
+                ? "filter-active"
+                : ""
+            }
             onClick={() => setFilter("all")}
           >
             All
@@ -195,7 +273,11 @@ function StreamList() {
 
           <button
             type="button"
-            className={filter === "active" ? "filter-active" : ""}
+            className={
+              filter === "active"
+                ? "filter-active"
+                : ""
+            }
             onClick={() => setFilter("active")}
           >
             Active
@@ -204,9 +286,13 @@ function StreamList() {
           <button
             type="button"
             className={
-              filter === "completed" ? "filter-active" : ""
+              filter === "completed"
+                ? "filter-active"
+                : ""
             }
-            onClick={() => setFilter("completed")}
+            onClick={() =>
+              setFilter("completed")
+            }
           >
             Completed
           </button>
@@ -229,7 +315,10 @@ function StreamList() {
 
           {filteredItems.length === 0 ? (
             <div className="empty-list">
-              <span className="material-symbols-outlined">
+              <span
+                className="material-symbols-outlined"
+                aria-hidden="true"
+              >
                 movie
               </span>
 
@@ -248,21 +337,38 @@ function StreamList() {
                 >
                   {editingId === item.id ? (
                     <div className="edit-area">
+                      <label
+                        className="visually-hidden"
+                        htmlFor={`edit-${item.id}`}
+                      >
+                        Edit {item.title}
+                      </label>
+
                       <input
+                        id={`edit-${item.id}`}
                         type="text"
                         value={editText}
                         onChange={(event) =>
-                          setEditText(event.target.value)
+                          setEditText(
+                            event.target.value
+                          )
                         }
+                        autoFocus
                       />
 
                       <button
                         type="button"
                         className="icon-button save"
-                        onClick={() => saveEdit(item.id)}
+                        onClick={() =>
+                          saveEdit(item.id)
+                        }
+                        aria-label={`Save ${item.title}`}
                         title="Save"
                       >
-                        <span className="material-symbols-outlined">
+                        <span
+                          className="material-symbols-outlined"
+                          aria-hidden="true"
+                        >
                           save
                         </span>
                       </button>
@@ -271,9 +377,13 @@ function StreamList() {
                         type="button"
                         className="icon-button"
                         onClick={cancelEdit}
+                        aria-label="Cancel editing"
                         title="Cancel"
                       >
-                        <span className="material-symbols-outlined">
+                        <span
+                          className="material-symbols-outlined"
+                          aria-hidden="true"
+                        >
                           close
                         </span>
                       </button>
@@ -287,13 +397,21 @@ function StreamList() {
                           onClick={() =>
                             handleComplete(item.id)
                           }
+                          aria-label={
+                            item.completed
+                              ? `Mark ${item.title} incomplete`
+                              : `Mark ${item.title} complete`
+                          }
                           title={
                             item.completed
                               ? "Mark incomplete"
                               : "Mark complete"
                           }
                         >
-                          <span className="material-symbols-outlined">
+                          <span
+                            className="material-symbols-outlined"
+                            aria-hidden="true"
+                          >
                             {item.completed
                               ? "check_circle"
                               : "radio_button_unchecked"}
@@ -310,9 +428,13 @@ function StreamList() {
                           onClick={() =>
                             startEditing(item)
                           }
+                          aria-label={`Edit ${item.title}`}
                           title="Edit"
                         >
-                          <span className="material-symbols-outlined">
+                          <span
+                            className="material-symbols-outlined"
+                            aria-hidden="true"
+                          >
                             edit
                           </span>
                         </button>
@@ -323,9 +445,13 @@ function StreamList() {
                           onClick={() =>
                             handleDelete(item.id)
                           }
+                          aria-label={`Delete ${item.title}`}
                           title="Delete"
                         >
-                          <span className="material-symbols-outlined">
+                          <span
+                            className="material-symbols-outlined"
+                            aria-hidden="true"
+                          >
                             delete
                           </span>
                         </button>

@@ -2,8 +2,17 @@ function Cart() {
   return (
     <main className="page">
       <section className="placeholder-page">
+        <p className="eyebrow">
+          STREAMLIST
+        </p>
+
         <h2>Cart</h2>
-        <p>This section will be developed later.</p>
+
+        <p>
+          The shopping cart functionality
+          will be developed in a future
+          version of StreamList.
+        </p>
       </section>
     </main>
   );

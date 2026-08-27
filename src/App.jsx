@@ -1,4 +1,7 @@
-import { Routes, Route } from "react-router";
+import {
+  Routes,
+  Route,
+} from "react-router";
 
 import Navigation from "./components/Navigation";
 import StreamList from "./pages/StreamList";
@@ -12,10 +15,25 @@ function App() {
       <Navigation />
 
       <Routes>
-        <Route path="/" element={<StreamList />} />
-        <Route path="/movies" element={<Movies />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/about" element={<About />} />
+        <Route
+          path="/"
+          element={<StreamList />}
+        />
+
+        <Route
+          path="/movies"
+          element={<Movies />}
+        />
+
+        <Route
+          path="/cart"
+          element={<Cart />}
+        />
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
       </Routes>
     </div>
   );
