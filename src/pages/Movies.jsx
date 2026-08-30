@@ -1,16 +1,23 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import MovieCard from "../components/MovieCard.jsx";
+import { searchMovies } from "../services/tmdb.js";
 
 function Movies() {
-  const [searchTerm, setSearchTerm] =
-    useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  const abortRef = useRef(null);
 
-  const [error, setError] =
-    useState("");
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleSearch = async (event) => {
     event.preventDefault();
@@ -22,68 +29,27 @@ function Movies() {
     const cleanSearch = searchTerm.trim();
 
     if (!cleanSearch) {
-      setError(
-        "Please enter a movie title."
-      );
-
+      setError("Please enter a movie title.");
       setMovies([]);
-
       return;
     }
 
-    const token =
-      import.meta.env.VITE_TMDB_TOKEN;
-
-    if (!token) {
-      setError(
-        "TMDB API token is missing."
-      );
-
-      setMovies([]);
-
-      return;
+    if (abortRef.current) {
+      abortRef.current.abort();
     }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setLoading(true);
-
     setError("");
-
     setMovies([]);
 
     try {
-      const url =
-        "https://api.themoviedb.org/3/search/movie" +
-        `?query=${encodeURIComponent(
-          cleanSearch
-        )}` +
-        "&include_adult=false" +
-        "&language=en-US" +
-        "&page=1";
-
-      const response = await fetch(url, {
-        method: "GET",
-
-        headers: {
-          accept: "application/json",
-
-          Authorization:
-            `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `TMDB request failed with status ${response.status}`
-        );
-      }
-
-      const data =
-        await response.json();
-
-      const results =
-        Array.isArray(data.results)
-          ? data.results
-          : [];
+      const results = await searchMovies(
+        cleanSearch,
+        controller.signal
+      );
 
       setMovies(results);
 
@@ -92,19 +58,21 @@ function Movies() {
           `No movies were found for "${cleanSearch}".`
         );
       }
-    } catch (error) {
-      console.error(
-        "TMDB search error:",
-        error
-      );
+    } catch (caught) {
+      if (caught.name === "AbortError") {
+        return;
+      }
 
+      console.error("TMDB search error:", caught);
       setMovies([]);
-
       setError(
         "Unable to retrieve movies from TMDB. Please try again."
       );
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
@@ -187,56 +155,7 @@ function Movies() {
 
         <div className="movie-grid">
           {movies.map((movie) => (
-            <article
-              className="movie-card"
-              key={movie.id}
-            >
-              {movie.poster_path ? (
-                <img
-                  src={
-                    "https://image.tmdb.org/t/p/w500" +
-                    movie.poster_path
-                  }
-                  alt={`${movie.title} poster`}
-                  loading="lazy"
-                />
-              ) : (
-                <div
-                  className="poster-placeholder"
-                  aria-label={
-                    `No poster available for ${movie.title}`
-                  }
-                >
-                  No Poster Available
-                </div>
-              )}
-
-              <div className="movie-card-content">
-                <h3>{movie.title}</h3>
-
-                <p className="movie-details">
-                  Release Date:{" "}
-                  {movie.release_date ||
-                    "Not available"}
-                </p>
-
-                <p className="movie-details">
-                  Rating:{" "}
-                  {typeof movie.vote_average ===
-                  "number"
-                    ? movie.vote_average.toFixed(
-                        1
-                      )
-                    : "N/A"}
-                  /10
-                </p>
-
-                <p className="movie-overview">
-                  {movie.overview ||
-                    "No description available."}
-                </p>
-              </div>
-            </article>
+            <MovieCard key={movie.id} movie={movie} />
           ))}
         </div>
       </section>
