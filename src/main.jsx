@@ -8,17 +8,28 @@ import {
   BrowserRouter,
 } from "react-router";
 
+import {
+  GoogleOAuthProvider,
+} from "@react-oauth/google";
+
 import App from "./App.jsx";
 
 import "./index.css";
+
+const googleClientId =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 createRoot(
   document.getElementById("root")
 ).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <GoogleOAuthProvider
+      clientId={googleClientId}
+    >
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   </StrictMode>
 );
 
@@ -27,7 +38,10 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("/service-worker.js")
       .catch((error) => {
-        console.error("Service worker registration failed:", error);
+        console.error(
+          "Service worker registration failed:",
+          error
+        );
       });
   });
 }
