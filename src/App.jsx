@@ -1,183 +1,94 @@
 import {
-  useState,
-} from "react";
-
-import {
-  Routes,
+  Outlet,
   Route,
-  Navigate,
-} from "react-router";
+  Routes,
+} from "react-router-dom"
 
-import Navigation from "./components/Navigation";
-import StreamList from "./pages/StreamList";
-import Movies from "./pages/Movies";
-import Cart from "./pages/Cart";
-import About from "./pages/About";
-import Login from "./pages/Login";
-import CreditCard from "./pages/CreditCard";
+import Navigation from "./components/Navigation"
+import InstallPWA from "./components/InstallPWA"
+import ProtectedRoute from "./components/ProtectedRoute"
 
-function getStoredUser() {
-  try {
-    const storedUser =
-      sessionStorage.getItem(
-        "streamlistUser"
-      );
+import Login from "./pages/Login"
+import StreamList from "./pages/StreamList"
+import Movies from "./pages/Movies"
+import Cart from "./pages/Cart"
+import CreditCard from "./pages/CreditCard"
 
-    return storedUser
-      ? JSON.parse(storedUser)
-      : null;
-  } catch {
-    return null;
-  }
-}
+function ProtectedLayout() {
+  return (
+    <div className="app">
+      <Navigation />
 
-function ProtectedRoute({
-  user,
-  children,
-}) {
-  if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-  }
+      <main className="main-content">
+        <Outlet />
+      </main>
 
-  return children;
+      <InstallPWA />
+
+      <footer className="footer">
+        <p>
+          EZTechMovie
+          StreamList
+        </p>
+
+        <p>
+          Secure Progressive Web
+          Application
+        </p>
+      </footer>
+    </div>
+  )
 }
 
 function App() {
-  const [user, setUser] =
-    useState(getStoredUser);
-
-  const handleLogin = (
-    userProfile
-  ) => {
-    sessionStorage.setItem(
-      "streamlistUser",
-      JSON.stringify(
-        userProfile
-      )
-    );
-
-    setUser(userProfile);
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem(
-      "streamlistUser"
-    );
-
-    setUser(null);
-
-    if (
-      window.google
-        ?.accounts
-        ?.id
-    ) {
-      window.google.accounts.id
-        .disableAutoSelect();
-    }
-  };
-
   return (
-    <div className="app">
-      {user && (
-        <Navigation
-          user={user}
-          onLogout={
-            handleLogout
-          }
-        />
-      )}
+    <Routes>
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-      <Routes>
+      <Route
+        element={
+          <ProtectedRoute />
+        }
+      >
         <Route
-          path="/login"
           element={
-            user ? (
-              <Navigate
-                to="/"
-                replace
-              />
-            ) : (
-              <Login
-                onLogin={
-                  handleLogin
-                }
-              />
-            )
+            <ProtectedLayout />
           }
-        />
-
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute
-              user={user}
-            >
+        >
+          <Route
+            path="/"
+            element={
               <StreamList />
-            </ProtectedRoute>
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/movies"
-          element={
-            <ProtectedRoute
-              user={user}
-            >
+          <Route
+            path="/movies"
+            element={
               <Movies />
-            </ProtectedRoute>
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute
-              user={user}
-            >
+          <Route
+            path="/cart"
+            element={
               <Cart />
-            </ProtectedRoute>
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/payment"
-          element={
-            <ProtectedRoute
-              user={user}
-            >
+          <Route
+            path="/credit-card"
+            element={
               <CreditCard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/about"
-          element={
-            <ProtectedRoute
-              user={user}
-            >
-              <About />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
-      </Routes>
-    </div>
-  );
+            }
+          />
+        </Route>
+      </Route>
+    </Routes>
+  )
 }
 
-export default App;
+export default App

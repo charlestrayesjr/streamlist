@@ -1,165 +1,346 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-import MovieCard from "../components/MovieCard.jsx";
-import { searchMovies } from "../services/tmdb.js";
+const TMDB_IMAGE_URL =
+  "https://image.tmdb.org/t/p/w500";
 
 function Movies() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] =
+    useState("");
 
-  const abortRef = useRef(null);
+  const [movies, setMovies] =
+    useState([]);
 
-  useEffect(() => {
-    return () => {
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
-    };
-  }, []);
+  const [loading, setLoading] =
+    useState(false);
 
-  const handleSearch = async (event) => {
+  const [error, setError] =
+    useState("");
+
+  const token =
+    import.meta.env.VITE_TMDB_TOKEN;
+
+  const searchMovies = async (
+    event
+  ) => {
     event.preventDefault();
 
-    if (loading) {
+    const query = searchTerm.trim();
+
+    if (!query) {
       return;
     }
 
-    const cleanSearch = searchTerm.trim();
+    if (!token) {
+      setError(
+        "TMDB token is missing. Check your .env file."
+      );
 
-    if (!cleanSearch) {
-      setError("Please enter a movie title.");
-      setMovies([]);
       return;
     }
-
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    abortRef.current = controller;
 
     setLoading(true);
     setError("");
-    setMovies([]);
 
     try {
-      const results = await searchMovies(
-        cleanSearch,
-        controller.signal
+      const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(
+          query
+        )}&include_adult=false&language=en-US&page=1`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+            accept:
+              "application/json",
+          },
+        }
       );
 
-      setMovies(results);
-
-      if (results.length === 0) {
-        setError(
-          `No movies were found for "${cleanSearch}".`
+      if (!response.ok) {
+        throw new Error(
+          "TMDB request failed."
         );
       }
-    } catch (caught) {
-      if (caught.name === "AbortError") {
-        return;
-      }
 
-      console.error("TMDB search error:", caught);
-      setMovies([]);
+      const data =
+        await response.json();
+
+      setMovies(data.results || []);
+    } catch (requestError) {
+      console.error(
+        requestError
+      );
+
       setError(
-        "Unable to retrieve movies from TMDB. Please try again."
+        "Movie search failed. Check your internet connection and TMDB token."
       );
     } finally {
-      if (abortRef.current === controller) {
-        abortRef.current = null;
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
+  const addToStreamList = (
+    movie
+  ) => {
+    const storageKey =
+      "eztechmovie-streamlist";
+
+    let currentItems = [];
+
+    try {
+      const savedItems =
+        localStorage.getItem(
+          storageKey
+        );
+
+      currentItems = savedItems
+        ? JSON.parse(savedItems)
+        : [];
+    } catch {
+      currentItems = [];
+    }
+
+    const alreadySaved =
+      currentItems.some(
+        (item) =>
+          item.tmdbId === movie.id
+      );
+
+    if (alreadySaved) {
+      alert(
+        "This movie is already in your StreamList."
+      );
+
+      return;
+    }
+
+    const newItem = {
+      id: crypto.randomUUID(),
+      tmdbId: movie.id,
+      title: movie.title,
+      notes:
+        movie.overview ||
+        "Added from TMDB movie search.",
+      completed: false,
+      createdAt:
+        new Date().toLocaleString(),
+    };
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify([
+        newItem,
+        ...currentItems,
+      ])
+    );
+
+    alert(
+      `${movie.title} was added to your StreamList.`
+    );
+  };
+
+  const addToCart = (movie) => {
+    const storageKey =
+      "eztechmovie-cart";
+
+    let cart = [];
+
+    try {
+      const savedCart =
+        localStorage.getItem(
+          storageKey
+        );
+
+      cart = savedCart
+        ? JSON.parse(savedCart)
+        : [];
+    } catch {
+      cart = [];
+    }
+
+    const alreadyInCart =
+      cart.some(
+        (item) =>
+          item.id === movie.id
+      );
+
+    if (alreadyInCart) {
+      alert(
+        "This movie is already in your cart."
+      );
+
+      return;
+    }
+
+    const cartMovie = {
+      id: movie.id,
+      title: movie.title,
+      poster_path:
+        movie.poster_path,
+      release_date:
+        movie.release_date,
+      price: 4.99,
+    };
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify([
+        cartMovie,
+        ...cart,
+      ])
+    );
+
+    alert(
+      `${movie.title} was added to your cart.`
+    );
+  };
+
   return (
-    <main className="page">
-      <section className="movie-page">
-        <p className="eyebrow">
-          TMDB MOVIE SEARCH
-        </p>
+    <section className="page">
+      <div className="hero simple-hero">
+        <div>
+          <p className="eyebrow">
+            TMDB Integration
+          </p>
 
-        <h2>
-          Find Movie Information
-        </h2>
+          <h2>
+            Movie Search
+          </h2>
 
-        <p className="intro">
-          Search The Movie Database for
-          movie information, ratings,
-          release dates, posters, and
-          descriptions.
-        </p>
+          <p>
+            Search current movie
+            information using The Movie
+            Database API.
+          </p>
+        </div>
+      </div>
 
+      <div className="panel">
         <form
-          className="movie-search-form"
-          onSubmit={handleSearch}
+          className="movie-search"
+          onSubmit={searchMovies}
         >
-          <label
-            htmlFor="movie-search"
-            className="search-label"
+          <input
+            type="search"
+            placeholder="Search for a movie"
+            value={searchTerm}
+            onChange={(event) =>
+              setSearchTerm(
+                event.target.value
+              )
+            }
+          />
+
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={loading}
           >
-            Movie title
-          </label>
-
-          <div className="movie-search-controls">
-            <input
-              id="movie-search"
-              type="text"
-              value={searchTerm}
-              onChange={(event) =>
-                setSearchTerm(
-                  event.target.value
-                )
-              }
-              placeholder="Search for a movie"
-              disabled={loading}
-              autoComplete="off"
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-            >
-              {loading
-                ? "Searching..."
-                : "Search"}
-            </button>
-          </div>
+            {loading
+              ? "Searching..."
+              : "Search Movies"}
+          </button>
         </form>
 
         {error && (
-          <p
-            className="status-message"
-            role="alert"
-          >
+          <p className="error-message">
             {error}
           </p>
         )}
+      </div>
 
-        {!loading &&
-          movies.length > 0 && (
-            <p
-              className="results-message"
-              aria-live="polite"
-            >
-              Showing {movies.length} result
-              {movies.length === 1
-                ? ""
-                : "s"}.
-            </p>
-          )}
+      {movies.length === 0 &&
+      !loading ? (
+        <div className="empty-state">
+          <h3>
+            Search for a movie
+          </h3>
 
+          <p>
+            Enter a movie title above to
+            retrieve results from TMDB.
+          </p>
+        </div>
+      ) : (
         <div className="movie-grid">
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+            <article
+              className="movie-card"
+              key={movie.id}
+            >
+              {movie.poster_path ? (
+                <img
+                  src={`${TMDB_IMAGE_URL}${movie.poster_path}`}
+                  alt={`${movie.title} poster`}
+                />
+              ) : (
+                <div className="poster-placeholder">
+                  No Poster
+                </div>
+              )}
+
+              <div className="movie-details">
+                <h3>
+                  {movie.title}
+                </h3>
+
+                <p className="movie-date">
+                  Release:{" "}
+                  {movie.release_date ||
+                    "Unknown"}
+                </p>
+
+                <p className="rating">
+                  Rating:{" "}
+                  {movie.vote_average
+                    ? movie.vote_average.toFixed(
+                        1
+                      )
+                    : "N/A"}
+                </p>
+
+                <p className="overview">
+                  {movie.overview
+                    ? `${movie.overview.slice(
+                        0,
+                        180
+                      )}${
+                        movie.overview
+                          .length >
+                        180
+                          ? "..."
+                          : ""
+                      }`
+                    : "No description available."}
+                </p>
+
+                <div className="movie-actions">
+                  <button
+                    className="primary-button"
+                    onClick={() =>
+                      addToStreamList(
+                        movie
+                      )
+                    }
+                  >
+                    Add to StreamList
+                  </button>
+
+                  <button
+                    className="secondary-button"
+                    onClick={() =>
+                      addToCart(movie)
+                    }
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            </article>
           ))}
         </div>
-      </section>
-    </main>
+      )}
+    </section>
   );
 }
 

@@ -1,391 +1,513 @@
 import {
   useState,
-} from "react";
+} from "react"
 
-function getSavedCard() {
-  try {
-    const saved =
-      localStorage.getItem(
-        "streamlistCreditCard"
-      );
+import {
+  useNavigate,
+} from "react-router-dom"
 
-    return saved
-      ? JSON.parse(saved)
-      : null;
-  } catch {
-    return null;
-  }
-}
+const CARD_KEY =
+  "eztechmovie-credit-card"
 
 function formatCardNumber(
   value
 ) {
-  const digits = value
-    .replace(/\D/g, "")
-    .slice(0, 16);
+  const numbers =
+    value
+      .replace(/\D/g, "")
+      .slice(0, 16)
 
   return (
-    digits.match(/.{1,4}/g)
+    numbers
+      .match(/.{1,4}/g)
       ?.join(" ") || ""
-  );
+  )
 }
 
 function formatExpiration(
   value
 ) {
-  const digits = value
-    .replace(/\D/g, "")
-    .slice(0, 4);
+  const numbers =
+    value
+      .replace(/\D/g, "")
+      .slice(0, 4)
 
-  if (digits.length <= 2) {
-    return digits;
+  if (
+    numbers.length <= 2
+  ) {
+    return numbers
   }
 
-  return `${digits.slice(
+  return `${numbers.slice(
     0,
     2
-  )}/${digits.slice(2)}`;
+  )}/${numbers.slice(2)}`
 }
 
 function CreditCard() {
-  const [
-    cardholderName,
-    setCardholderName,
-  ] = useState("");
+  const navigate =
+    useNavigate()
 
-  const [
-    cardNumber,
-    setCardNumber,
-  ] = useState("");
+  const [form, setForm] =
+    useState({
+      cardholderName: "",
+      cardNumber: "",
+      expirationDate: "",
+      cvv: "",
+      billingZip: "",
+    })
 
-  const [
-    expiration,
-    setExpiration,
-  ] = useState("");
+  const [message, setMessage] =
+    useState("")
 
-  const [cvv, setCvv] =
-    useState("");
+  const [error, setError] =
+    useState("")
 
-  const [
-    savedCard,
-    setSavedCard,
-  ] = useState(getSavedCard);
-
-  const [
-    message,
-    setMessage,
-  ] = useState("");
-
-  const handleCardNumber = (
+  const handleChange = (
     event
   ) => {
-    setCardNumber(
-      formatCardNumber(
-        event.target.value
-      )
-    );
-  };
+    const {
+      name,
+      value,
+    } = event.target
 
-  const handleExpiration = (
-    event
-  ) => {
-    setExpiration(
-      formatExpiration(
-        event.target.value
-      )
-    );
-  };
+    let newValue =
+      value
 
-  const handleCvv = (
-    event
-  ) => {
-    const digits =
-      event.target.value
-        .replace(/\D/g, "")
-        .slice(0, 4);
+    if (
+      name === "cardNumber"
+    ) {
+      newValue =
+        formatCardNumber(
+          value
+        )
+    }
 
-    setCvv(digits);
-  };
+    if (
+      name ===
+      "expirationDate"
+    ) {
+      newValue =
+        formatExpiration(
+          value
+        )
+    }
+
+    if (
+      name === "cvv"
+    ) {
+      newValue =
+        value
+          .replace(
+            /\D/g,
+            ""
+          )
+          .slice(0, 4)
+    }
+
+    if (
+      name ===
+      "billingZip"
+    ) {
+      newValue =
+        value
+          .replace(
+            /[^0-9A-Za-z -]/g,
+            ""
+          )
+          .slice(0, 10)
+    }
+
+    setForm(
+      (
+        currentForm
+      ) => ({
+        ...currentForm,
+        [name]:
+          newValue,
+      })
+    )
+  }
+
+  const validateForm =
+    () => {
+      if (
+        !form.cardholderName
+          .trim()
+      ) {
+        return "Enter the name on the card."
+      }
+
+      if (
+        !/^\d{4} \d{4} \d{4} \d{4}$/.test(
+          form.cardNumber
+        )
+      ) {
+        return "Card number must use the format 1234 5678 9012 3456."
+      }
+
+      if (
+        !/^(0[1-9]|1[0-2])\/\d{2}$/.test(
+          form.expirationDate
+        )
+      ) {
+        return "Expiration date must use MM/YY."
+      }
+
+      if (
+        !/^\d{3,4}$/.test(
+          form.cvv
+        )
+      ) {
+        return "Enter a valid 3 or 4 digit security code."
+      }
+
+      if (
+        !form.billingZip
+          .trim()
+      ) {
+        return "Enter the billing ZIP or postal code."
+      }
+
+      return ""
+    }
 
   const handleSubmit = (
     event
   ) => {
-    event.preventDefault();
+    event.preventDefault()
 
-    const cardDigits =
-      cardNumber.replace(
-        /\s/g,
-        ""
-      );
+    setMessage("")
+    setError("")
+
+    const validationError =
+      validateForm()
 
     if (
-      !cardholderName.trim()
+      validationError
     ) {
-      setMessage(
-        "Enter the cardholder name."
-      );
-
-      return;
-    }
-
-    if (
-      cardDigits.length !== 16
-    ) {
-      setMessage(
-        "The card number must contain 16 digits."
-      );
-
-      return;
-    }
-
-    if (
-      !/^(0[1-9]|1[0-2])\/\d{2}$/.test(
-        expiration
+      setError(
+        validationError
       )
-    ) {
-      setMessage(
-        "Enter the expiration date as MM/YY."
-      );
 
-      return;
+      return
     }
 
-    if (
-      !/^\d{3,4}$/.test(cvv)
-    ) {
-      setMessage(
-        "Enter a valid 3 or 4 digit security code."
-      );
-
-      return;
-    }
-
-    const cardData = {
+    const cardForCourseDemo = {
       cardholderName:
-        cardholderName.trim(),
-      cardNumber,
-      expiration,
-    };
+        form.cardholderName
+          .trim(),
+
+      cardNumber:
+        form.cardNumber,
+
+      expirationDate:
+        form.expirationDate,
+
+      billingZip:
+        form.billingZip
+          .trim(),
+
+      savedAt:
+        new Date()
+          .toLocaleString(),
+    }
 
     localStorage.setItem(
-      "streamlistCreditCard",
+      CARD_KEY,
       JSON.stringify(
-        cardData
+        cardForCourseDemo
       )
-    );
-
-    setSavedCard(cardData);
-
-    setCvv("");
+    )
 
     setMessage(
-      "Card information saved successfully."
-    );
-  };
+      "Demo card information was saved to Local Storage. The security code was not stored."
+    )
 
-  const clearSavedCard = () => {
-    localStorage.removeItem(
-      "streamlistCreditCard"
-    );
+    setForm(
+      (
+        currentForm
+      ) => ({
+        ...currentForm,
+        cvv: "",
+      })
+    )
+  }
 
-    setSavedCard(null);
+  const removeSavedCard =
+    () => {
+      localStorage.removeItem(
+        CARD_KEY
+      )
 
-    setCardholderName("");
-    setCardNumber("");
-    setExpiration("");
-    setCvv("");
+      setMessage(
+        "Saved demo card information was removed."
+      )
 
-    setMessage(
-      "Saved card information removed."
-    );
-  };
-
-  const lastFour =
-    savedCard?.cardNumber
-      ?.replace(/\s/g, "")
-      .slice(-4);
+      setError("")
+    }
 
   return (
-    <main className="page">
-      <section className="payment-page">
-        <p className="eyebrow">
-          SECURE CHECKOUT
+    <section className="page">
+      <div className="hero simple-hero">
+        <div>
+          <p className="eyebrow">
+            Secure Checkout
+          </p>
+
+          <h2>
+            Credit Card
+            Management
+          </h2>
+
+          <p>
+            Enter payment
+            information to
+            complete the
+            EZTechMovie checkout
+            prototype.
+          </p>
+        </div>
+      </div>
+
+      <div className="security-notice">
+        <strong>
+          Course Prototype
+        </strong>
+
+        <p>
+          Do not enter a real
+          credit card. Use the
+          demonstration format
+          1234 5678 9012 3456.
         </p>
+      </div>
 
-        <h2>
-          Credit Card
-        </h2>
+      <div className="payment-grid">
+        <div className="panel">
+          <h3>
+            Payment
+            Information
+          </h3>
 
-        <p className="intro">
-          Enter payment information
-          to complete the checkout
-          demonstration.
-        </p>
-
-        <form
-          className="payment-form"
-          onSubmit={
-            handleSubmit
-          }
-        >
-          <div className="form-field">
-            <label
-              htmlFor="cardholder"
-            >
-              Cardholder Name
-            </label>
-
-            <input
-              id="cardholder"
-              type="text"
-              value={
-                cardholderName
-              }
-              onChange={(
-                event
-              ) =>
-                setCardholderName(
-                  event.target
-                    .value
-                )
-              }
-              autoComplete="cc-name"
-              placeholder="Charles Trayes"
-            />
-          </div>
-
-          <div className="form-field">
-            <label
-              htmlFor="card-number"
-            >
-              Card Number
-            </label>
-
-            <input
-              id="card-number"
-              type="text"
-              inputMode="numeric"
-              value={
-                cardNumber
-              }
-              onChange={
-                handleCardNumber
-              }
-              autoComplete="cc-number"
-              placeholder="1234 5678 9012 3456"
-              maxLength="19"
-            />
-          </div>
-
-          <div className="payment-row">
-            <div className="form-field">
+          <form
+            className="stream-form"
+            onSubmit={
+              handleSubmit
+            }
+            autoComplete="off"
+          >
+            <div className="form-group">
               <label
-                htmlFor="expiration"
+                htmlFor="cardholderName"
               >
-                Expiration
+                Name on Card
               </label>
 
               <input
-                id="expiration"
+                id="cardholderName"
+                name="cardholderName"
+                type="text"
+                placeholder="Charles Trayes"
+                value={
+                  form.cardholderName
+                }
+                onChange={
+                  handleChange
+                }
+                autoComplete="off"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label
+                htmlFor="cardNumber"
+              >
+                Card Number
+              </label>
+
+              <input
+                id="cardNumber"
+                name="cardNumber"
                 type="text"
                 inputMode="numeric"
+                placeholder="1234 5678 9012 3456"
+                maxLength="19"
                 value={
-                  expiration
+                  form.cardNumber
                 }
                 onChange={
-                  handleExpiration
+                  handleChange
                 }
-                autoComplete="cc-exp"
-                placeholder="MM/YY"
-                maxLength="5"
+                autoComplete="off"
+                required
               />
             </div>
 
-            <div className="form-field">
+            <div className="payment-row">
+              <div className="form-group">
+                <label
+                  htmlFor="expirationDate"
+                >
+                  Expiration
+                </label>
+
+                <input
+                  id="expirationDate"
+                  name="expirationDate"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="MM/YY"
+                  maxLength="5"
+                  value={
+                    form.expirationDate
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  autoComplete="off"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label
+                  htmlFor="cvv"
+                >
+                  CVV
+                </label>
+
+                <input
+                  id="cvv"
+                  name="cvv"
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="123"
+                  maxLength="4"
+                  value={
+                    form.cvv
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  autoComplete="off"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
               <label
-                htmlFor="cvv"
+                htmlFor="billingZip"
               >
-                CVV
+                Billing ZIP or
+                Postal Code
               </label>
 
               <input
-                id="cvv"
-                type="password"
-                inputMode="numeric"
-                value={cvv}
-                onChange={
-                  handleCvv
+                id="billingZip"
+                name="billingZip"
+                type="text"
+                placeholder="12345"
+                value={
+                  form.billingZip
                 }
-                autoComplete="cc-csc"
-                placeholder="123"
-                maxLength="4"
+                onChange={
+                  handleChange
+                }
+                autoComplete="off"
+                required
               />
             </div>
-          </div>
 
-          <button
-            className="save-card-button"
-            type="submit"
-          >
-            Save Card
-          </button>
-        </form>
+            {error && (
+              <p className="error-message">
+                {error}
+              </p>
+            )}
 
-        {message && (
-          <p
-            className="status-message"
-            role="status"
-          >
-            {message}
+            {message && (
+              <p className="success-message">
+                {message}
+              </p>
+            )}
+
+            <div className="form-actions">
+              <button
+                className="primary-button"
+                type="submit"
+              >
+                Save Demo Card
+              </button>
+
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() =>
+                  navigate(
+                    "/cart"
+                  )
+                }
+              >
+                Back to Cart
+              </button>
+
+              <button
+                className="danger-button"
+                type="button"
+                onClick={
+                  removeSavedCard
+                }
+              >
+                Remove Saved
+                Card
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="payment-preview">
+          <p>
+            EZTECHMOVIE
           </p>
-        )}
 
-        {savedCard && (
-          <div className="saved-card">
-            <p className="eyebrow">
-              SAVED PAYMENT METHOD
-            </p>
-
-            <h3>
-              {
-                savedCard.cardholderName
-              }
-            </h3>
-
-            <p>
-              Card ending in{" "}
-              <strong>
-                {lastFour}
-              </strong>
-            </p>
-
-            <p>
-              Expires{" "}
-              {
-                savedCard.expiration
-              }
-            </p>
-
-            <button
-              type="button"
-              className="clear-button"
-              onClick={
-                clearSavedCard
-              }
-            >
-              Remove Saved Card
-            </button>
+          <div className="card-chip">
+            ▰
           </div>
-        )}
 
-        <p className="security-note">
-          Class demonstration only.
-          Do not enter real payment
-          information.
-        </p>
-      </section>
-    </main>
-  );
+          <div className="preview-number">
+            {form.cardNumber ||
+              "1234 5678 9012 3456"}
+          </div>
+
+          <div className="preview-bottom">
+            <div>
+              <span>
+                CARDHOLDER
+              </span>
+
+              <strong>
+                {form.cardholderName ||
+                  "YOUR NAME"}
+              </strong>
+            </div>
+
+            <div>
+              <span>
+                EXPIRES
+              </span>
+
+              <strong>
+                {form.expirationDate ||
+                  "MM/YY"}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
 }
 
-export default CreditCard;
+export default CreditCard

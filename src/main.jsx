@@ -1,42 +1,35 @@
 import { StrictMode } from "react";
-
-import {
-  createRoot,
-} from "react-dom/client";
-
-import {
-  BrowserRouter,
-} from "react-router";
-
-import {
-  GoogleOAuthProvider,
-} from "@react-oauth/google";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
 import App from "./App.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 
 import "./index.css";
 
-const googleClientId =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-createRoot(
-  document.getElementById("root")
-).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <GoogleOAuthProvider
-      clientId={googleClientId}
-    >
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <App />
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>
 );
 
-if ("serviceWorker" in navigator) {
+if (
+  "serviceWorker" in navigator &&
+  import.meta.env.PROD
+) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/service-worker.js")
+      .then((registration) => {
+        console.log(
+          "EZTechMovie service worker registered:",
+          registration.scope
+        );
+      })
       .catch((error) => {
         console.error(
           "Service worker registration failed:",
